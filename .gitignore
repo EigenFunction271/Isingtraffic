@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env
+.venv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# Project specific
+temp_frames/
+*.html
+*.png
+*.gif
+*.log
+!ising_routing_map.html
+!quantum_ising_routing_map.html
+!simulation_comparison.png
+!energy_comparison.png
+!quantum_energy_history.png
+
+# OSMnx cache
+.osmnx/
+
+# OS specific
+.DS_Store
+Thumbs.db 

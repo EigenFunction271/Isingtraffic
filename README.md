@@ -1,27 +1,50 @@
-# Ising Traffic Model
+# Ising Traffic Simulation
 
 This project implements traffic simulations using both classical and quantum-inspired Ising models. It models road networks as a system of interacting spins, where each road segment can be either open (+1) or closed (-1). The simulations use simulated annealing to find optimal traffic patterns.
 
 ## Features
 
-- Real-world road network integration using OpenStreetMap data
-- Physics-based traffic simulation using the Ising model
-- Quantum-inspired implementation with superposition, tunneling, and entanglement
-- Interactive visualization of traffic patterns
+### Classical Implementation
+- Road network representation using OSMnx
+- Ising model-based traffic flow simulation
+- Simulated annealing optimization
+- Interactive visualization using Folium
+- Configurable parameters for simulation
+
+### Quantum-Inspired Implementation
+- Quantum superposition states for roads
+- Quantum tunneling effects
+- Entanglement-like correlations between roads
+- Enhanced visualization of quantum states
+- Energy history tracking
+
+### Comparison Tools
+- Side-by-side comparison of classical and quantum models
+- Energy evolution visualization
+- Interactive map comparisons
 - Configurable simulation parameters
 - Support for road closures and highway prioritization
 
 ## Installation
 
-1. Clone this repository
-2. Install the required dependencies:
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd IsingTraffic
+```
+
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-### Classical Simulation
+### Running Classical Simulation
+```bash
+python map_setup.py
+```
+This will generate `ising_routing_map.html` showing the classical simulation results.
 
 1. Configure the simulation parameters in `map_setup.py`:
 ```python

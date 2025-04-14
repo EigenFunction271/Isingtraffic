@@ -12,6 +12,8 @@ class IsingTraffic:
             J_matrix: Interaction matrix between road segments
             h_field: External field affecting each road segment
             closures: List of indices of permanently closed roads
+                     These roads will be fixed in the closed state (-1) during the simulation
+                     and cannot be opened by the algorithm
         """
         # Input validation
         if not isinstance(J_matrix, np.ndarray) or J_matrix.shape != (num_nodes, num_nodes):
@@ -44,7 +46,7 @@ class IsingTraffic:
         """
         # Create a mask for active roads
         active_mask = np.ones_like(self.spins)
-        active_mask[self.closures] = 0
+        active_mask[self.closures] = 0  # Mask out closed roads
         
         # Calculate interaction energy only for active roads
         interaction = -0.5 * np.sum(
@@ -69,10 +71,11 @@ class IsingTraffic:
     def step(self, T: float) -> None:
         """
         Perform one step of the simulation at temperature T.
+        Closed roads are never selected for flipping.
         """
         i = random.randint(0, self.N - 1)
         if i in self.closures:
-            return
+            return  # Skip closed roads
         
         dE = self.delta_energy(i)
         if dE < 0 or random.random() < np.exp(-dE / T):

@@ -31,13 +31,28 @@ CONFIG = {
 
     # Road closure settings
     'closures': []  # List of road indices that should remain permanently closed (-1)
-                   # These roads will be fixed in the closed state during simulation
+                   # To close specific roads:
+                   # 1. First run the simulation without closures to see the road indices
+                   # 2. Look at the road names in the generated map
+                   # 3. Add the indices of roads you want to close to this list
                    # Example: [5, 10, 15] would keep roads at indices 5, 10, and 15 closed
+                   # Note: Road indices correspond to the order in which they appear in the network
+                   # You can find road indices by:
+                   # 1. Running the simulation once
+                   # 2. Opening the generated HTML map
+                   # 3. Hovering over roads to see their names and indices
+                   # 4. Adding the desired indices to this list
 }
 
 # Load and prepare the road network
 G = ox.graph_from_place(CONFIG['place'], network_type=CONFIG['network_type'])
-G = ox.simplify_graph(G)
+
+# Check if the graph needs simplification
+if not G.graph.get('simplified', False):
+    G = ox.simplify_graph(G)
+    print("Graph simplified")
+else:
+    print("Graph was already simplified")
 
 edges = list(G.edges(keys=True, data=True))
 num_edges = len(edges)
@@ -64,7 +79,7 @@ model = IsingTraffic(
     num_nodes=num_edges,
     J_matrix=J,
     h_field=h,
-    closures=CONFIG['closures']
+    closures=CONFIG['closures']  # These roads will be fixed in the closed state during simulation
 )
 
 spins = model.run(
