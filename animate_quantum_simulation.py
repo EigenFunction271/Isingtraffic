@@ -19,9 +19,9 @@ CONFIG = {
     'network_type': 'drive',  # Type of road network: 'drive', 'walk', 'bike', etc.
 
     # Simulation parameters
-    'simulation_steps': 2000,  # Number of steps in the quantum simulation
-    'initial_temperature': 5.0,  # Starting temperature for simulated annealing
-    'cooling_rate': 0.99,  # Rate at which temperature decreases (0-1, closer to 1 = slower cooling)
+    'simulation_steps': 2500,  # Number of steps in the quantum simulation
+    'initial_temperature': 30.0,  # Starting temperature for simulated annealing
+    'cooling_rate': 0.995,  # Rate at which temperature decreases (0-1, closer to 1 = slower cooling)
 
     # Road interaction parameters
     'interaction_strength': 1.0,  # Strength of interaction between connected roads
@@ -32,12 +32,12 @@ CONFIG = {
     'highway_identifier': 'LDP',    # Text to identify highways in road names
 
     # Quantum parameters
-    'tunneling_strength': 0.2,  # Strength of quantum tunneling effect
-    'entanglement_range': 3,    # Range of entanglement-like correlations
+    'tunneling_strength': 0.3,  # Strength of quantum tunneling effect
+    'entanglement_range': 4,    # Range of entanglement-like correlations
 
     # Animation settings
-    'frames_per_second': 10,        # Number of frames per second in the GIF
-    'frame_interval': 50,           # Take a snapshot every N steps
+    'frames_per_second': 15,        # Number of frames per second in the GIF
+    'frame_interval': 30,           # Take a snapshot every N steps
     'gif_output_file': 'quantum_ising_simulation.gif',  # Name of the output GIF file
     'temp_image_dir': 'temp_frames',  # Directory to store temporary frame images
 
@@ -91,27 +91,33 @@ model = QuantumIsingTraffic(
 )
 
 # Function to create a map frame
-def create_map_frame(spins, amplitudes, step, temperature):
+def create_map_frame(spins, step, temperature):
     m = ox.plot_graph_folium(G, popup_attribute='name', weight=1, color='gray')
     
-    # Add roads with colors based on their state and quantumness
+    # Get quantum state information
+    quantum_state = model.get_quantum_state()
+    amplitudes = quantum_state['amplitudes']
+    
+    # Add roads with colors based on their state
     for i, (u, v, k, data) in enumerate(edges):
+        coords = [(G.nodes[u]['y'], G.nodes[u]['x']), (G.nodes[v]['y'], G.nodes[v]['x'])]
+        
         if spins[i] == 1:  # Open road
-            # Calculate "quantumness" based on amplitude
+            # Calculate quantumness based on amplitude
             quantumness = abs(amplitudes[i, 1])**2  # Probability of being open
-            
             # Color based on quantumness (red = classical, blue = quantum)
             color = f'#{int(255*quantumness):02x}00{int(255*(1-quantumness)):02x}'
-            
-            coords = [(G.nodes[u]['y'], G.nodes[u]['x']), (G.nodes[v]['y'], G.nodes[v]['x'])]
-            folium.PolyLine(coords, color=color, weight=4).add_to(m)
+            folium.PolyLine(coords, color=color, weight=2, opacity=0.8).add_to(m)
+        else:  # Closed road
+            folium.PolyLine(coords, color='#404040', weight=2, opacity=0.5).add_to(m)
     
     # Add title with step and temperature
     title_html = f'''
     <div style="position: fixed; 
-                top: 10px; left: 50px; width: 300px; height: 30px; 
-                z-index:9999; font-size:14px; background-color: white; 
-                padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+                top: 10px; left: 50px; width: 400px; height: 40px; 
+                z-index:9999; font-size:16px; font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.9); 
+                padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
         Step: {step}, Temperature: {temperature:.4f}
     </div>
     '''
@@ -143,12 +149,10 @@ for step in range(CONFIG['simulation_steps']):
     # Take a snapshot at regular intervals
     if step % CONFIG['frame_interval'] == 0:
         print(f"Capturing frame at step {step} (temperature: {T:.4f})")
-        # Get current states and amplitudes
-        spins = model._get_all_states()
-        quantum_state = model.get_quantum_state()
-        amplitudes = quantum_state['amplitudes']
+        # Get current states
+        spins = model.get_current_spins()
         
-        frame_map = create_map_frame(spins, amplitudes, step, T)
+        frame_map = create_map_frame(spins, step, T)
         frame_file = save_frame_as_image(frame_map, step // CONFIG['frame_interval'])
         frame_files.append(frame_file)
     
@@ -168,40 +172,54 @@ ax.set_title("Quantum Ising Traffic Simulation")
 def update(frame):
     ax.clear()
     
-    # Plot the road network
-    pos = {node: (G.nodes[node]['x'], G.nodes[node]['y']) for node in G.nodes()}
+    # Plot the road network with a dark background
+    ax.set_facecolor('#1a1a1a')
+    fig.patch.set_facecolor('#1a1a1a')
     
-    # Draw edges
-    nx.draw_networkx_edges(G, pos, ax=ax, edge_color='gray', width=1, alpha=0.5)
-    
-    # Get current states and amplitudes
-    spins = model._get_all_states()
+    # Get quantum state information
     quantum_state = model.get_quantum_state()
     amplitudes = quantum_state['amplitudes']
     
-    # Draw open roads with colors based on quantumness
-    open_edges = []
-    edge_colors = []
+    # Plot the road network
+    pos = {node: (G.nodes[node]['x'], G.nodes[node]['y']) for node in G.nodes()}
     
+    # Draw roads with colors based on their state
     for i, (u, v, k, _) in enumerate(edges):
         if spins[i] == 1:  # Open road
-            open_edges.append((u, v, k))
-            # Calculate "quantumness" based on amplitude
+            # Calculate quantumness based on amplitude
             quantumness = abs(amplitudes[i, 1])**2  # Probability of being open
             # Color based on quantumness (red = classical, blue = quantum)
-            edge_colors.append((quantumness, 0, 1-quantumness))
+            color = (quantumness, 0, 1-quantumness)
+            nx.draw_networkx_edges(G, pos, ax=ax, edgelist=[(u, v, k)],
+                                 edge_color=color, width=4)
+        else:  # Closed road
+            nx.draw_networkx_edges(G, pos, ax=ax, edgelist=[(u, v, k)],
+                                 edge_color='#404040', width=1, alpha=0.5)
     
-    if open_edges:
-        nx.draw_networkx_edges(G, pos, ax=ax, edgelist=open_edges, edge_color=edge_colors, width=2)
-    
-    # Set title with step and temperature
+    # Calculate current step and temperature
     step = frame * CONFIG['frame_interval']
     temperature = CONFIG['initial_temperature'] * (CONFIG['cooling_rate'] ** step)
-    ax.set_title(f"Step: {step}, Temperature: {temperature:.4f}")
     
-    # Set axis limits
+    # Add a text box with step and temperature information
+    info_text = f'Step: {step}\nTemp: {temperature:.4f}'
+    text_box = dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.8)
+    ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=text_box, color='black', fontweight='bold')
+    
+    # Add a legend for quantum states
+    quantum_text = 'Color Scale:\nRed = Classical\nBlue = Quantum'
+    quantum_box = dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.8)
+    ax.text(0.98, 0.98, quantum_text, transform=ax.transAxes, fontsize=10,
+            verticalalignment='top', horizontalalignment='right',
+            bbox=quantum_box, color='black')
+    
+    # Set axis limits with some padding
     ax.set_xlim(min(x for x, _ in pos.values()) - 0.01, max(x for x, _ in pos.values()) + 0.01)
     ax.set_ylim(min(y for _, y in pos.values()) - 0.01, max(y for _, y in pos.values()) + 0.01)
+    
+    # Remove axis ticks and labels for cleaner look
+    ax.set_xticks([])
+    ax.set_yticks([])
     
     return ax,
 

@@ -10,6 +10,7 @@ This project implements traffic simulations using both classical and quantum-ins
 - Simulated annealing optimization
 - Interactive visualization using Folium
 - Configurable parameters for simulation
+- Animation capabilities to visualize simulation progress
 
 ### Quantum-Inspired Implementation
 - Quantum superposition states for roads
@@ -17,6 +18,7 @@ This project implements traffic simulations using both classical and quantum-ins
 - Entanglement-like correlations between roads
 - Enhanced visualization of quantum states
 - Energy history tracking
+- Animation capabilities to visualize quantum evolution
 
 ### Comparison Tools
 - Side-by-side comparison of classical and quantum models
@@ -68,6 +70,43 @@ CONFIG = {
 python map_setup.py
 ```
 
+### Running Classical Animation
+```bash
+python animate_simulation.py
+```
+This will generate `ising_simulation.gif` showing the evolution of the classical simulation.
+
+1. Configure the animation parameters in `animate_simulation.py`:
+```python
+CONFIG = {
+    # Location settings
+    'place': "Your City, Country",
+    'network_type': 'drive',
+    
+    # Simulation parameters
+    'simulation_steps': 2000,
+    'initial_temperature': 5.0,
+    'cooling_rate': 0.99,
+    
+    # Road interaction parameters
+    'interaction_strength': 1.0,
+    
+    # Road priority parameters
+    'highway_field_strength': 1.0,
+    'base_field_strength': 0.1,
+    'highway_identifier': 'LDP',
+    
+    # Animation settings
+    'frames_per_second': 10,        # Number of frames per second in the GIF
+    'frame_interval': 50,           # Take a snapshot every N steps
+    'gif_output_file': 'ising_simulation.gif',  # Name of the output GIF file
+    'temp_image_dir': 'temp_frames',  # Directory to store temporary frame images
+    
+    # Road closure settings
+    'closures': []
+}
+```
+
 ### Quantum-Inspired Simulation
 
 1. Configure the quantum simulation parameters in `quantum_map_setup.py`:
@@ -109,6 +148,90 @@ python quantum_map_setup.py
 ```
 
 3. Open the generated HTML file in a web browser to view the results.
+
+### Running Quantum Animation
+```bash
+python animate_quantum_simulation.py
+```
+This will generate `quantum_ising_simulation.gif` showing the evolution of the quantum simulation.
+
+1. Configure the quantum animation parameters in `animate_quantum_simulation.py`:
+```python
+CONFIG = {
+    # Location settings
+    'place': "Your City, Country",
+    'network_type': 'drive',
+    
+    # Simulation parameters
+    'simulation_steps': 2000,
+    'initial_temperature': 10.0,  # Higher initial temperature for quantum effects
+    'cooling_rate': 0.995,        # Slower cooling for quantum effects
+    
+    # Road interaction parameters
+    'interaction_strength': 1.0,
+    
+    # Road priority parameters
+    'highway_field_strength': 1.0,
+    'base_field_strength': 0.1,
+    'highway_identifier': 'LDP',
+    
+    # Quantum parameters
+    'tunneling_strength': 0.3,  # Strength of quantum tunneling effect
+    'entanglement_range': 4,    # Range of entanglement-like correlations
+    
+    # Animation settings
+    'frames_per_second': 15,        # Number of frames per second in the GIF
+    'frame_interval': 30,           # Take a snapshot every N steps
+    'gif_output_file': 'quantum_ising_simulation.gif',  # Name of the output GIF file
+    'temp_image_dir': 'temp_frames',  # Directory to store temporary frame images
+    
+    # Road closure settings
+    'closures': []
+}
+```
+
+### Comparing Classical and Quantum Simulations
+```bash
+python compare_simulations.py
+```
+This will generate comparison plots showing the differences between classical and quantum simulations.
+
+1. Configure the comparison parameters in `compare_simulations.py`:
+```python
+CONFIG = {
+    # Location settings
+    'place': "Your City, Country",
+    'network_type': 'drive',
+    
+    # Simulation parameters
+    'simulation_steps': 2000,
+    'initial_temperature': 5.0,
+    'cooling_rate': 0.99,
+    
+    # Road interaction parameters
+    'interaction_strength': 1.0,
+    
+    # Road priority parameters
+    'highway_field_strength': 1.0,
+    'base_field_strength': 0.1,
+    'highway_identifier': 'LDP',
+    
+    # Quantum parameters
+    'tunneling_strength': 0.2,
+    'entanglement_range': 3,
+    
+    # Animation settings
+    'frames_per_second': 10,
+    'frame_interval': 50,
+    'classical_gif': 'classical_simulation.gif',
+    'quantum_gif': 'quantum_simulation.gif',
+    'comparison_plot': 'simulation_comparison.png',
+    'temp_image_dir': 'temp_frames',
+    
+    # Road closure settings
+    'closures': []
+}
+```
 
 ## Mathematical Details
 
@@ -154,17 +277,11 @@ where \( \gamma \) is the tunneling strength parameter.
 
 #### 3. Entanglement-like Correlations
 
-Roads can be correlated with each other through an entanglement matrix \( E_{ij} \):
+Roads can be correlated with each other through an entanglement range parameter \( r \). When a road's state changes, nearby roads within the entanglement range are affected according to their distance.
 
-\[ E_{ij} = \frac{1}{1 + |i-j|/r} \]
+The entanglement measure is calculated as:
 
-where \( r \) is the entanglement range parameter.
-
-When a road's state changes, entangled roads are affected according to:
-
-\[ |\psi_j\rangle \rightarrow c_{ij} \cdot |\psi_i\rangle \]
-
-where \( c_{ij} \) is the correlation strength from the entanglement matrix.
+\[ E = (1/N)∑ᵢⱼ |⟨ψ|σᵢσⱼ|ψ⟩ - ⟨ψ|σᵢ|ψ⟩⟨ψ|σⱼ|ψ⟩| \]
 
 #### 4. Measurement and Collapse
 
@@ -194,6 +311,13 @@ When measuring a road's state, the wavefunction collapses according to the Born 
 - `entanglement_range`: Range of entanglement-like correlations between roads
 - `energy_plot_file`: Name of the energy history plot file
 
+### Animation Parameters
+
+- `frames_per_second`: Number of frames per second in the GIF
+- `frame_interval`: Take a snapshot every N steps
+- `gif_output_file`: Name of the output GIF file
+- `temp_image_dir`: Directory to store temporary frame images
+
 ## How It Works
 
 1. The code downloads a real road network from OpenStreetMap
@@ -202,7 +326,7 @@ When measuring a road's state, the wavefunction collapses according to the Born 
 4. Highways are given higher priority through external fields
 5. The system evolves using simulated annealing (classical) or quantum-inspired dynamics
 6. The final configuration shows which roads should be open/closed
-7. Results are visualized on an interactive map
+7. Results are visualized on an interactive map or as an animation
 
 ## Dependencies
 
@@ -213,7 +337,170 @@ When measuring a road's state, the wavefunction collapses according to the Born 
 - pandas: Data manipulation
 - matplotlib: Plotting
 - scipy: Scientific computing (for quantum implementation)
+- Pillow: Image processing (for GIF creation)
 
 ## License
 
-This project is open source and available under the MIT License. 
+This project is open source and available under the MIT License.
+
+## Appendix: Quantum Model Implementation Details
+
+### Mathematical Foundation
+
+The quantum-inspired traffic model extends the classical Ising model with quantum mechanical concepts. Here's a detailed breakdown of the implementation:
+
+#### 1. Quantum State Representation
+
+Each road in the network is represented by a quantum state vector:
+
+```
+|ψ⟩ = α|0⟩ + β|1⟩
+```
+
+where:
+- |0⟩ represents a closed road
+- |1⟩ represents an open road
+- α and β are complex amplitudes satisfying |α|² + |β|² = 1
+- The probability of measuring the road as open is |β|²
+- The probability of measuring the road as closed is |α|²
+
+The system is initialized in an equal superposition state:
+```
+|ψ₀⟩ = (1/√2)(|0⟩ + |1⟩)
+```
+
+#### 2. Energy Function
+
+The total energy of the system includes both classical and quantum terms:
+
+```
+E = -∑ᵢⱼ Jᵢⱼ⟨ψ|σᵢσⱼ|ψ⟩ - ∑ᵢ hᵢ⟨ψ|σᵢ|ψ⟩ + quantum_corrections
+```
+
+where:
+- Jᵢⱼ is the interaction strength between roads i and j
+- hᵢ is the external field affecting road i
+- σᵢ is the Pauli-Z operator for road i
+- quantum_corrections include:
+  1. Tunneling energy: -γ∑ᵢ ⟨ψ|σₓ|ψ⟩
+  2. Entanglement energy: -Jₑ∑ᵢⱼₖ ⟨ψ|σᵢσⱼσₖ|ψ⟩
+
+#### 3. Quantum Effects
+
+##### a. Quantum Tunneling
+Roads can "tunnel" through energy barriers with probability:
+```
+P = min(1, exp(-ΔE/T))
+```
+where:
+- ΔE is the energy difference
+- T is the temperature
+- The tunneling strength γ controls how easily roads can tunnel
+
+##### b. Entanglement-like Correlations
+Roads within a certain range (entanglement_range) can be correlated beyond direct connections. The entanglement measure is:
+```
+E = (1/N)∑ᵢⱼ |⟨ψ|σᵢσⱼ|ψ⟩ - ⟨ψ|σᵢ|ψ⟩⟨ψ|σⱼ|ψ⟩|
+```
+
+##### c. Quantum Interference
+Paths can interfere constructively or destructively based on their phases:
+```
+|ψ'⟩ = exp(-iHΔt)|ψ⟩
+```
+where H is the Hamiltonian of the system.
+
+#### 4. Time Evolution
+
+The quantum state evolves according to:
+1. Select a road i
+2. Calculate energy change ΔE
+3. Apply quantum tunneling with probability P
+4. Update quantum state with phase rotation:
+   ```
+   |ψ'⟩ = exp(iθ)|ψ⟩
+   ```
+5. Normalize the state
+6. Measure to get classical configuration
+
+#### 5. Measurement Process
+
+The quantum state collapses to a classical state based on the Born rule:
+- P(|1⟩) = |β|² (probability of measuring open)
+- P(|0⟩) = |α|² (probability of measuring closed)
+
+#### 6. Quantumness Measure
+
+The "quantumness" of a road measures how far its state is from classical:
+```
+quantumness = 1 - |⟨ψ|σᵢ|ψ⟩|²
+```
+- quantumness = 0 for classical states (|0⟩ or |1⟩)
+- quantumness = 1 for equal superposition ((|0⟩ + |1⟩)/√2)
+
+#### 7. Implementation Parameters
+
+Key parameters in the implementation:
+- `tunneling_strength`: Controls quantum tunneling probability (default: 0.2-0.3)
+- `entanglement_range`: Range of entanglement-like correlations (default: 3-4)
+- `initial_temperature`: Starting temperature for simulated annealing (default: 5.0-10.0)
+- `cooling_rate`: Rate at which temperature decreases (default: 0.99-0.995)
+
+#### 8. Visualization
+
+The quantum state is visualized through:
+- Color gradients based on quantumness (red = classical, blue = quantum)
+- Line thickness indicating road state (open/closed)
+- Animation showing the evolution of the quantum state over time
+
+This quantum-inspired implementation allows the traffic system to explore configurations that might be inaccessible to classical methods, potentially finding more optimal solutions through quantum tunneling and entanglement-like effects.
+
+#### 9. Entanglement and State Space Evolution
+
+The entanglement measure plays a crucial role in shaping the evolution of the traffic system's state space:
+
+##### a. State Space Connectivity
+
+In a classical Ising model, the state space is a discrete hypercube where each vertex represents a specific configuration of open/closed roads. Transitions between states occur by flipping individual spins, moving along the edges of this hypercube.
+
+The entanglement measure introduces additional connectivity in the state space:
+- Roads that are entangled can change state together, even if they are not directly connected in the road network
+- This creates "shortcuts" through the state space, allowing the system to explore configurations that would require multiple sequential changes in the classical model
+- The entanglement range parameter controls how many of these shortcuts are available
+
+##### b. Collective Behavior
+
+The entanglement measure promotes collective behavior among roads:
+- When roads are highly entangled, they tend to evolve together toward similar states
+- This creates clusters of roads that behave as a single unit, reducing the effective dimensionality of the state space
+- The system can thus find solutions that maintain coherence across larger sections of the road network
+
+##### c. Energy Landscape Modification
+
+The entanglement measure modifies the energy landscape of the system:
+- It introduces additional energy terms that depend on the correlation between roads
+- These terms create valleys and ridges in the energy landscape that guide the system toward configurations with strong correlations
+- The system can "slide" along these features, potentially avoiding local minima that would trap a classical system
+
+##### d. Exploration vs. Exploitation
+
+The entanglement measure affects the balance between exploration and exploitation:
+- High entanglement promotes exploitation by encouraging roads to align with their neighbors
+- Low entanglement allows for more independent exploration of different configurations
+- The entanglement history tracks how this balance evolves during the simulation
+
+##### e. Phase Transitions
+
+The entanglement measure can lead to phase transitions in the system:
+- As temperature decreases, the system may transition from a disordered phase with low entanglement to an ordered phase with high entanglement
+- These transitions can be observed as sudden changes in the entanglement history
+- The critical temperature at which these transitions occur depends on the entanglement range and strength
+
+##### f. Practical Implications
+
+From a traffic optimization perspective, the entanglement measure has several practical implications:
+- It promotes the formation of coherent traffic patterns where connected roads tend to be either all open or all closed
+- It helps maintain the integrity of major routes by keeping all segments of a route in the same state
+- It can lead to more robust solutions that are less sensitive to local perturbations
+
+The entanglement measure thus transforms the optimization process from a purely local search to one that can discover globally coherent solutions, potentially finding traffic patterns that would be difficult to discover using classical methods alone. 

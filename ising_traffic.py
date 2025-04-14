@@ -115,6 +115,15 @@ class IsingTraffic:
         """Return the history of energy values during the simulation."""
         return self.energy_history
 
+    def get_current_spins(self) -> np.ndarray:
+        """
+        Get the current classical representation of the road states.
+        
+        Returns:
+        - spins: Array of road states (1 for open, -1 for closed)
+        """
+        return self.spins.copy()
+
 
 if __name__ == "__main__":
     # Example usage

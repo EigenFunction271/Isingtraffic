@@ -124,8 +124,8 @@ def create_comparison_plot(classical_model, quantum_model, G, edges):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
     
     # Get final states
-    classical_spins = classical_model.spins
-    quantum_spins = quantum_model._get_all_states()
+    classical_spins = classical_model.get_current_spins()
+    quantum_spins = quantum_model.get_current_spins()
     quantum_state = quantum_model.get_quantum_state()
     quantum_amplitudes = quantum_state['amplitudes']
     

@@ -42,7 +42,13 @@ CONFIG = {
 
 # Load and prepare the road network
 G = ox.graph_from_place(CONFIG['place'], network_type=CONFIG['network_type'])
-G = ox.simplify_graph(G)
+
+# Check if the graph needs simplification
+if not G.graph.get('simplified', False):
+    G = ox.simplify_graph(G)
+    print("Graph simplified")
+else:
+    print("Graph was already simplified")
 
 edges = list(G.edges(keys=True, data=True))
 num_edges = len(edges)
@@ -87,7 +93,8 @@ spins = model.run(
 # Get quantum state information
 quantum_state = model.get_quantum_state()
 amplitudes = quantum_state['amplitudes']
-entanglement = quantum_state['entanglement']
+# Get entanglement using the proper method
+entanglement = model.get_average_entanglement()
 
 # Create map visualization
 m = ox.plot_graph_folium(G, popup_attribute='name', weight=1, color='gray')

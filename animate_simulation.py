@@ -130,7 +130,10 @@ for step in range(CONFIG['simulation_steps']):
     # Take a snapshot at regular intervals
     if step % CONFIG['frame_interval'] == 0:
         print(f"Capturing frame at step {step} (temperature: {T:.4f})")
-        frame_map = create_map_frame(model.spins, step, T)
+        # Get current states
+        spins = model.get_current_spins()
+        
+        frame_map = create_map_frame(spins, step, T)
         frame_file = save_frame_as_image(frame_map, step // CONFIG['frame_interval'])
         frame_files.append(frame_file)
     
@@ -156,8 +159,11 @@ def update(frame):
     # Draw edges
     nx.draw_networkx_edges(G, pos, ax=ax, edge_color='gray', width=1, alpha=0.5)
     
+    # Get current states
+    spins = model.get_current_spins()
+    
     # Draw open roads in red
-    open_edges = [(u, v, k) for i, (u, v, k, _) in enumerate(edges) if model.spins[i] == 1]
+    open_edges = [(u, v, k) for i, (u, v, k, _) in enumerate(edges) if spins[i] == 1]
     nx.draw_networkx_edges(G, pos, ax=ax, edgelist=open_edges, edge_color='red', width=2)
     
     # Set title with step and temperature

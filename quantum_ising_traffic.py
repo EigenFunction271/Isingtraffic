@@ -7,19 +7,25 @@ from scipy.linalg import expm
 class QuantumIsingTraffic:
     """
     A quantum-inspired version of the Ising Traffic model.
-    This implementation includes:
-    - Quantum superposition states
-    - Quantum tunneling effects
-    - Entanglement-like correlations
-    - Quantum interference patterns
+    
+    This implementation extends the classical Ising model with quantum-inspired effects:
+    1. Superposition states: Roads can exist in a superposition of open/closed states
+    2. Quantum tunneling: Roads can "tunnel" through energy barriers
+    3. Entanglement-like correlations: Roads can be correlated beyond direct connections
+    4. Quantum interference: Paths can interfere constructively or destructively
+    
+    Mathematical foundation:
+    - State vector: |ψ⟩ = α|0⟩ + β|1⟩ where |α|² + |β|² = 1
+    - Energy: E = -∑ᵢⱼ Jᵢⱼsᵢsⱼ - ∑ᵢ hᵢsᵢ + quantum_terms
+    - Time evolution: |ψ(t)⟩ = exp(-iHt/ℏ)|ψ(0)⟩
     """
     
     def __init__(self, num_nodes: int, J_matrix: np.ndarray, h_field: np.ndarray, 
                  closures: Optional[List[int]] = None, 
-                 tunneling_strength: float = 0.1,
+                 tunneling_strength: float = 0.2,
                  entanglement_range: int = 3):
         """
-        Initialize the Quantum Ising Traffic model.
+        Initialize the quantum-inspired Ising Traffic model.
         
         Args:
             num_nodes: Number of road segments
@@ -46,248 +52,269 @@ class QuantumIsingTraffic:
         if not all(0 <= i < num_nodes for i in self.closures):
             raise ValueError("All closure indices must be between 0 and num_nodes-1")
         
-        # Initialize quantum states (complex amplitudes)
-        # Each road has amplitudes for |0⟩ and |1⟩ states
-        self.amplitudes = np.zeros((self.N, 2), dtype=complex)
+        # Initialize quantum state vectors (complex128 to handle complex amplitudes)
+        self.amplitudes = np.zeros((self.N, 2), dtype=np.complex128)
         
-        # Initialize all roads to |1⟩ state (open) by default
+        # Initialize spins (classical representation)
+        self.spins = np.ones(self.N)
+        for i in self.closures:
+            self.spins[i] = -1  # permanently closed roads
+        
+        # Initialize all roads in a superposition state
         for i in range(self.N):
             if i in self.closures:
-                self.amplitudes[i, 0] = 1.0  # |0⟩ state (closed)
-                self.amplitudes[i, 1] = 0.0  # |1⟩ state (open)
+                # Closed roads are fixed in the closed state
+                self.amplitudes[i, 0] = 1.0
+                self.amplitudes[i, 1] = 0.0
             else:
-                self.amplitudes[i, 0] = 0.0  # |0⟩ state (closed)
-                self.amplitudes[i, 1] = 1.0  # |1⟩ state (open)
-        
-        # Initialize entanglement matrix
-        self.entanglement_matrix = self._build_entanglement_matrix()
+                # Open roads start in a superposition state
+                self.amplitudes[i, 0] = 1.0 / np.sqrt(2)
+                self.amplitudes[i, 1] = 1.0 / np.sqrt(2)
         
         # Initialize energy tracking
         self.energy_history = []
         self.current_energy = self.energy()
-    
-    def _build_entanglement_matrix(self) -> np.ndarray:
-        """
-        Build a matrix representing entanglement-like correlations between roads.
-        Roads within entanglement_range of each other have non-zero correlations.
-        """
-        E = np.zeros((self.N, self.N), dtype=complex)
-        
-        # Create entanglement-like correlations based on distance
-        for i in range(self.N):
-            for j in range(i+1, self.N):
-                # Calculate "distance" between roads (using J matrix as a proxy)
-                if self.J[i, j] != 0:  # If roads are connected
-                    # Add entanglement-like correlation
-                    correlation = 1.0 / (1.0 + abs(i - j) / self.entanglement_range)
-                    E[i, j] = correlation
-                    E[j, i] = correlation  # Make symmetric
-        
-        return E
-    
-    def _get_state(self, i: int) -> int:
-        """
-        Measure the state of road i (collapse the wavefunction).
-        Returns 0 (closed) or 1 (open).
-        """
-        if i in self.closures:
-            return 0  # Closed roads are always measured as closed
-        
-        # Calculate probabilities
-        p0 = abs(self.amplitudes[i, 0])**2
-        p1 = abs(self.amplitudes[i, 1])**2
-        
-        # Normalize
-        total = p0 + p1
-        p0 /= total
-        p1 /= total
-        
-        # Measure based on probabilities
-        if random.random() < p0:
-            # Collapse to |0⟩ state
-            self.amplitudes[i, 0] = 1.0
-            self.amplitudes[i, 1] = 0.0
-            return 0
-        else:
-            # Collapse to |1⟩ state
-            self.amplitudes[i, 0] = 0.0
-            self.amplitudes[i, 1] = 1.0
-            return 1
-    
-    def _get_all_states(self) -> np.ndarray:
-        """
-        Measure all road states (collapse all wavefunctions).
-        Returns an array of 0s and 1s.
-        """
-        states = np.zeros(self.N, dtype=int)
-        for i in range(self.N):
-            states[i] = self._get_state(i)
-        return states
-    
-    def energy(self) -> float:
-        """
-        Calculate the expected energy of the quantum system.
-        """
-        # Get classical states for energy calculation
-        states = self._get_all_states()
-        
-        # Create a mask for active roads
-        active_mask = np.ones_like(states)
-        active_mask[self.closures] = 0
-        
-        # Calculate interaction energy
-        interaction = -0.5 * np.sum(
-            self.J * np.outer(states * active_mask, states * active_mask)
-        )
-        
-        # Calculate field energy
-        field = -np.sum(self.h * states * active_mask)
-        
-        return interaction + field
-    
-    def _quantum_tunnel(self, i: int, T: float) -> bool:
-        """
-        Attempt quantum tunneling through energy barriers.
-        Returns True if tunneling occurred.
-        """
-        if i in self.closures:
-            return False  # Closed roads can't tunnel
-        
-        # Calculate energy barrier
-        dE = self.delta_energy(i)
-        
-        # Quantum tunneling probability
-        # Higher at low temperatures and for higher barriers
-        tunneling_prob = self.tunneling_strength * np.exp(-dE / (T + 1e-10))
-        
-        return random.random() < tunneling_prob
-    
-    def delta_energy(self, i: int) -> float:
-        """
-        Calculate the energy change if road i is flipped.
-        """
-        if i in self.closures:
-            return 0  # don't flip closed roads
-        
-        # Get current state
-        current_state = self._get_state(i)
-        
-        # Calculate energy with current state
-        E_current = -np.sum(self.J[i] * self._get_all_states()) - self.h[i]
-        
-        # Calculate energy with flipped state
-        E_flipped = -np.sum(self.J[i] * self._get_all_states()) + self.h[i]
-        
-        return E_flipped - E_current
-    
-    def _apply_quantum_effects(self, i: int, T: float) -> None:
-        """
-        Apply quantum effects to road i:
-        - Superposition
-        - Entanglement
-        - Interference
-        """
-        if i in self.closures:
-            return  # Closed roads are unaffected
-        
-        # Get entangled roads
-        entangled = np.where(self.entanglement_matrix[i] > 0)[0]
-        
-        # Create superposition
-        phase = random.random() * 2 * np.pi
-        self.amplitudes[i, 0] = cmath.exp(1j * phase) * np.sqrt(0.5)
-        self.amplitudes[i, 1] = cmath.exp(1j * (phase + np.pi/2)) * np.sqrt(0.5)
-        
-        # Apply entanglement effects
-        for j in entangled:
-            if j != i and j not in self.closures:
-                # Entangle amplitudes
-                correlation = self.entanglement_matrix[i, j]
-                self.amplitudes[j, 0] = correlation * self.amplitudes[i, 0]
-                self.amplitudes[j, 1] = correlation * self.amplitudes[i, 1]
-                
-                # Normalize
-                norm = np.sqrt(abs(self.amplitudes[j, 0])**2 + abs(self.amplitudes[j, 1])**2)
-                self.amplitudes[j, 0] /= norm
-                self.amplitudes[j, 1] /= norm
-    
-    def step(self, T: float) -> None:
-        """
-        Perform one quantum step of the simulation at temperature T.
-        """
-        i = random.randint(0, self.N - 1)
-        
-        # Apply quantum effects
-        self._apply_quantum_effects(i, T)
-        
-        # Attempt quantum tunneling
-        if self._quantum_tunnel(i, T):
-            # Tunneling occurred, flip the state
-            if self._get_state(i) == 0:
-                self.amplitudes[i, 0] = 0.0
-                self.amplitudes[i, 1] = 1.0
-            else:
-                self.amplitudes[i, 0] = 1.0
-                self.amplitudes[i, 1] = 0.0
-        else:
-            # Classical thermal transition
-            dE = self.delta_energy(i)
-            if dE < 0 or random.random() < np.exp(-dE / T):
-                # Flip the state
-                if self._get_state(i) == 0:
-                    self.amplitudes[i, 0] = 0.0
-                    self.amplitudes[i, 1] = 1.0
-                else:
-                    self.amplitudes[i, 0] = 1.0
-                    self.amplitudes[i, 1] = 0.0
-        
-        # Update energy
-        self.current_energy = self.energy()
-    
-    def run(self, steps: int = 1000, T0: float = 5.0, cooling: float = 0.99, 
-            track_energy: bool = True, track_interval: int = 100) -> np.ndarray:
-        """
-        Run the quantum simulation with specified parameters.
-        
-        Args:
-            steps: Number of simulation steps
-            T0: Initial temperature
-            cooling: Temperature cooling rate
-            track_energy: Whether to track energy history
-            track_interval: How often to record energy (in steps)
-            
-        Returns:
-            Final road states (0 = closed, 1 = open)
-        """
-        T = T0
-        self.energy_history = []
-        
-        for step in range(steps):
-            self.step(T)
-            
-            # Track energy if requested
-            if track_energy and step % track_interval == 0:
-                self.energy_history.append(self.current_energy)
-            
-            T *= cooling
-        
-        # Return final states
-        return self._get_all_states()
-    
-    def get_energy_history(self) -> List[float]:
-        """Return the history of energy values during the simulation."""
-        return self.energy_history
+        self.entanglement_history = []
     
     def get_quantum_state(self) -> Dict[str, np.ndarray]:
         """
         Get the current quantum state of the system.
-        Returns a dictionary with amplitudes and entanglement information.
+        
+        Returns:
+        - amplitudes: Matrix of quantum amplitudes [α, β] for each road
+        - phases: Matrix of quantum phases [θ₀, θ₁] for each road
         """
         return {
             'amplitudes': self.amplitudes.copy(),
-            'entanglement': self.entanglement_matrix.copy(),
-            'classical_states': self._get_all_states()
+            'phases': np.angle(self.amplitudes)
         }
+    
+    def get_quantumness(self, i: int) -> float:
+        """
+        Calculate the "quantumness" of a road (how quantum-like its state is).
+        
+        Mathematical definition:
+        quantumness = 1 - |⟨ψ|σᵢ|ψ⟩|²
+        where σᵢ is the Pauli-Z operator for road i
+        
+        This measures how far the state is from a classical state (0 or 1).
+        """
+        # |⟨ψ|σᵢ|ψ⟩|² = |α|² - |β|²
+        classical_component = abs(np.abs(self.amplitudes[i, 0])**2 - np.abs(self.amplitudes[i, 1])**2)
+        return 1 - classical_component
+    
+    def get_current_spins(self) -> np.ndarray:
+        """
+        Get the current classical representation of the road states.
+        
+        Returns:
+        - spins: Array of road states (1 for open, -1 for closed)
+        """
+        return self.spins.copy()
+    
+    def get_average_entanglement(self) -> float:
+        """
+        Calculate the average entanglement between roads.
+        
+        Mathematical definition:
+        E = (1/N)∑ᵢⱼ |⟨ψ|σᵢσⱼ|ψ⟩ - ⟨ψ|σᵢ|ψ⟩⟨ψ|σⱼ|ψ⟩|
+        """
+        if len(self.entanglement_history) > 0:
+            return np.mean(self.entanglement_history[-1])
+        return 0.0
+    
+    def energy(self) -> float:
+        """
+        Calculate the total energy of the system including quantum terms.
+        
+        Mathematical formula:
+        E = -∑ᵢⱼ Jᵢⱼ⟨ψ|σᵢσⱼ|ψ⟩ - ∑ᵢ hᵢ⟨ψ|σᵢ|ψ⟩ + quantum_corrections
+        
+        Quantum corrections include:
+        1. Tunneling energy: -γ∑ᵢ ⟨ψ|σₓ|ψ⟩
+        2. Entanglement energy: -Jₑ∑ᵢⱼₖ ⟨ψ|σᵢσⱼσₖ|ψ⟩
+        """
+        # Classical energy terms
+        active_mask = np.ones_like(self.spins)
+        active_mask[self.closures] = 0
+        
+        # Calculate expectation values
+        exp_values = np.array([np.abs(a[1])**2 - np.abs(a[0])**2 for a in self.amplitudes])
+        
+        # Interaction energy
+        interaction = -0.5 * np.sum(
+            self.J * np.outer(exp_values * active_mask, exp_values * active_mask)
+        )
+        
+        # Field energy
+        field = -np.sum(self.h * exp_values * active_mask)
+        
+        # Quantum tunneling energy
+        tunneling = -self.tunneling_strength * np.sum(
+            [2 * np.real(self.amplitudes[i, 0] * np.conj(self.amplitudes[i, 1]))
+             for i in range(self.N) if i not in self.closures]
+        )
+        
+        # Entanglement-like energy
+        entanglement = 0
+        for i in range(self.N):
+            if i in self.closures:
+                continue
+            for j in range(max(0, i-self.entanglement_range), 
+                         min(self.N, i+self.entanglement_range+1)):
+                if j == i or j in self.closures:
+                    continue
+                entanglement += np.abs(
+                    exp_values[i] * exp_values[j] - 
+                    np.mean(exp_values[max(0, i-self.entanglement_range):
+                                     min(self.N, i+self.entanglement_range+1)])
+                )
+        
+        return interaction + field + tunneling + 0.1 * entanglement
+    
+    def delta_energy(self, i: int) -> float:
+        """
+        Calculate the energy change if road i's state is modified.
+        
+        Mathematical formula:
+        ΔE = 2sᵢ(∑ⱼ Jᵢⱼsⱼ + hᵢ) + quantum_terms
+        
+        Quantum terms include:
+        1. Tunneling contribution: -γ(⟨ψ'|σₓ|ψ'⟩ - ⟨ψ|σₓ|ψ⟩)
+        2. Entanglement contribution: -Jₑ∑ⱼₖ(⟨ψ'|σᵢσⱼσₖ|ψ'⟩ - ⟨ψ|σᵢσⱼσₖ|ψ⟩)
+        """
+        if i in self.closures:
+            return 0
+        
+        # Classical energy change
+        exp_value = np.abs(self.amplitudes[i, 1])**2 - np.abs(self.amplitudes[i, 0])**2
+        dE = 2 * exp_value * (np.sum(self.J[i] * self.spins) + self.h[i])
+        
+        # Quantum tunneling contribution
+        dE += self.tunneling_strength * (
+            2 * np.real(self.amplitudes[i, 0] * np.conj(self.amplitudes[i, 1]))
+        )
+        
+        return dE
+    
+    def step(self, T: float) -> None:
+        """
+        Perform one step of the quantum-inspired simulation at temperature T.
+        Closed roads are never selected for flipping.
+        """
+        i = random.randint(0, self.N - 1)
+        if i in self.closures:
+            return  # Skip closed roads
+        
+        # Calculate energy change if we were to flip this road
+        dE = self.delta_energy(i)
+        
+        # Quantum tunneling probability
+        tunneling_prob = np.exp(-dE / T) * self.tunneling_strength
+        
+        # Apply quantum tunneling effect
+        if random.random() < tunneling_prob:
+            # Phase rotation based on energy change
+            phase = -dE / T
+            # Ensure we're working with complex128
+            self.amplitudes[i] = self.amplitudes[i].astype(np.complex128) * np.exp(1j * phase)
+            
+            # Normalize amplitudes
+            norm = np.sqrt(np.sum(np.abs(self.amplitudes[i])**2))
+            self.amplitudes[i] /= norm
+            
+            # Update classical spin based on measurement
+            if np.abs(self.amplitudes[i, 1])**2 > np.abs(self.amplitudes[i, 0])**2:
+                self.spins[i] = 1  # Open
+            else:
+                self.spins[i] = -1  # Closed
+        
+        # Apply entanglement-like correlations
+        self._apply_entanglement(i)
+        
+        # Update current energy
+        self.current_energy = self.energy()
+    
+    def _apply_entanglement(self, i: int) -> None:
+        """
+        Apply entanglement-like correlations to nearby roads.
+        
+        This method is called after a road's state changes to propagate
+        the change to nearby roads within the entanglement range.
+        """
+        if i in self.closures:
+            return
+        
+        # Get the range of roads to affect
+        start = max(0, i - self.entanglement_range)
+        end = min(self.N, i + self.entanglement_range + 1)
+        
+        # Calculate correlation strength based on distance
+        for j in range(start, end):
+            if j == i or j in self.closures:
+                continue
+            
+            # Correlation strength decreases with distance
+            distance = abs(j - i)
+            correlation = 1.0 / (1.0 + distance)
+            
+            # Apply correlation to amplitudes
+            self.amplitudes[j] = (1 - correlation) * self.amplitudes[j] + correlation * self.amplitudes[i]
+            
+            # Normalize
+            norm = np.sqrt(np.sum(np.abs(self.amplitudes[j])**2))
+            self.amplitudes[j] /= norm
+            
+            # Update classical spin based on measurement
+            if np.abs(self.amplitudes[j, 1])**2 > np.abs(self.amplitudes[j, 0])**2:
+                self.spins[j] = 1  # Open
+            else:
+                self.spins[j] = -1  # Closed
+    
+    def run(self, steps: int = 1000, T0: float = 5.0, cooling: float = 0.99,
+            track_energy: bool = True, track_interval: int = 100) -> np.ndarray:
+        """
+        Run the quantum-inspired simulation.
+        
+        Mathematical process:
+        1. Initialize temperature T = T₀
+        2. For each step:
+           - Apply quantum step
+           - Cool temperature: T' = T * cooling
+           - Track energy and entanglement
+        3. Return final classical configuration
+        """
+        T = T0
+        self.energy_history = []
+        self.entanglement_history = []
+        
+        for step in range(steps):
+            self.step(T)
+            
+            if track_energy and step % track_interval == 0:
+                self.energy_history.append(self.current_energy)
+                # Calculate current entanglement
+                entanglement = []
+                for i in range(self.N):
+                    if i in self.closures:
+                        continue
+                    for j in range(max(0, i-self.entanglement_range),
+                                 min(self.N, i+self.entanglement_range+1)):
+                        if j == i or j in self.closures:
+                            continue
+                        entanglement.append(
+                            abs(np.abs(self.amplitudes[i, 1])**2 - 
+                                np.abs(self.amplitudes[j, 1])**2)
+                        )
+                self.entanglement_history.append(np.mean(entanglement))
+            
+            T *= cooling
+        
+        return self.spins
+    
+    def get_energy_history(self) -> List[float]:
+        """Return the history of energy values during the simulation."""
+        return self.energy_history
 
 
 if __name__ == "__main__":
